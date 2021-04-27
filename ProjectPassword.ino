@@ -192,7 +192,7 @@ int RealPW[4] = {2, 0, 0, 2};
 bool pass = false;
 bool dooropen = false;
 bool objectLost = false;
-bool 
+bool keypassword = false;
 const byte ROWS = 4; //four rows
 const byte COLS = 3; //three columns
 //define the cymbols on the buttons of the keypads
@@ -216,7 +216,7 @@ SevenSegment sevseg(segmentPin, false);
 void accessAuthorized();
 
 void setup() {
-  //      Serial.begin(9600);
+//    Serial.begin(9600);
   Wire.begin();
   pinMode(SevSegL, OUTPUT);
   pinMode(DOORLOCK, OUTPUT);
@@ -225,22 +225,28 @@ void setup() {
 }
 
 void loop() {
-  //  Serial.println(analogRead(A1));
+//    Serial.println(analogRead(SensorDoor));
   char key = myKeypad.getKey();
   int num = key - '0';
 
   //ของหาย
-  if (analogRead(SensorObject) > 500) {
+  if (analogRead(SensorObject) > 500 && keypassword == false) {
     pass = false;
     objectLost = true;
     //buzzer beep
   }
 
+  //ของไม่หายแล้ว
+  if (keypassword == true && analogRead(SensorObject) < 500) {
+    keypassword = false;
+    objectLost = false;
+  }
+
   //ประตูauto
   if (dooropen == false && analogRead(SensorDoor) < 850 && objectLost == false) {
-    digitalWrite(DOORLOCK, HIGH); //door open
     digitalWrite(SevSegL, LOW);
     sevseg.blank();
+    digitalWrite(DOORLOCK, HIGH); //door open
     delay(1500);
   }
 
@@ -267,8 +273,9 @@ void loop() {
           preNum[3] = 0;
           pressCount = 0;
 
-          if (objectLost == true && analogRead(SensorObject) < 500) {
+          if (objectLost == true) {
             objectLost = false;
+            keypassword = true;
           }
           digitalWrite(SevSegL, LOW);
           sevseg.blank(); // Clear SevenSegment.
